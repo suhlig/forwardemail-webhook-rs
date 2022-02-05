@@ -1,0 +1,69 @@
+{
+  "attachments": [],
+  "headers": {},
+  "headerLines": [
+    {
+      "key": "dkim-signature",
+      "line": "DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=forwardemail.net;\r\n q=dns/txt; s=default; bh=fdkeB/A0FkbVP2k4J4pNPoeWH6vqBm9+b0C3OY87Cw8=;\r\n h=from:subject:date:message-id:to:mime-version:content-type:content-transfer-encoding;\r\n b=KJZp0q0u/cQhcjwilKMainmlystwHgCZ7/ncK1uBmmdGoaXlQcMHsfenLyn/uribhMVrdfWw6\r\n YhQ5AIOAGoft/fwpGhl3zP1b5qrPwYu0kLMPr2MSwkLo0YVdbHB6xF+VGeg2vaduJk6CipXjMW7\r\n Mlohmvjw0m1tnN6dAYGOkwQ="
+    },
+    {
+      "key": "message-id",
+      "line": "Message-ID: <123.abc@test>"
+    },
+    {
+      "key": "date",
+      "line": "Date: Thu, 9 Nov 2000 10:44:00 -0800 (PST)"
+    },
+    {
+      "key": "to",
+      "line": "To: webhook@nowak-reisen.de"
+    },
+    {
+      "key": "from",
+      "line": "From: Test <test@user.com>"
+    },
+    {
+      "key": "subject",
+      "line": "Subject: testing webhooks"
+    },
+    {
+      "key": "mime-version",
+      "line": "Mime-Version: 1.0"
+    },
+    {
+      "key": "content-type",
+      "line": "Content-Type: text/plain; charset=us-ascii"
+    },
+    {
+      "key": "content-transfer-encoding",
+      "line": "Content-Transfer-Encoding: 7bit"
+    }
+  ],
+  "text": "Test\n",
+  "textAsHtml": "<p>Test</p>",
+  "subject": "testing webhooks",
+  "date": "2000-11-09T18:44:00.000Z",
+  "to": {
+    "value": [
+      {
+        "address": "webhook@nowak-reisen.de",
+        "name": ""
+      }
+    ],
+    "html": "<span class=\"mp_address_group\"><a href=\"mailto:webhook@nowak-reisen.de\" class=\"mp_address_email\">webhook@nowak-reisen.de</a></span>",
+    "text": "webhook@nowak-reisen.de"
+  },
+  "from": {
+    "value": [
+      {
+        "address": "test@nowak-reisen.de",
+        "name": "Test"
+      }
+    ],
+    "html": "<span class=\"mp_address_group\"><span class=\"mp_address_name\">Test</span> &lt;<a href=\"mailto:test@nowak-reisen.de\" class=\"mp_address_email\">test@nowak-reisen.de</a>&gt;</span>",
+    "text": "Test <test@examplecom>"
+  },
+  "messageId": "<123.abc@test>",
+  "html": false,
+  "raw": "DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=forwardemail.net;\r\n q=dns/txt; s=default; bh=fdkeB/A0FkbVP2k4J4pNPoeWH6vqBm9+b0C3OY87Cw8=;\r\n h=from:subject:date:message-id:to:mime-version:content-type:content-transfer-encoding;\r\n b=KJZp0q0u/cQhcjwilKMainmlystwHgCZ7/ncK1uBmmdGoaXlQcMHsfenLyn/uribhMVrdfWw6\r\n YhQ5AIOAGoft/fwpGhl3zP1b5qrPwYu0kLMPr2MSwkLo0YVdbHB6xF+VGeg2vaduJk6CipXjMW7\r\n Mlohmvjw0m1tnN6dAYGOkwQ=\r\nMessage-ID: <123.abc@test>\r\nDate: Thu, 9 Nov 2000 10:44:00 -0800 (PST)\r\nTo: webhook@nowak-reisen.de\r\nFrom: Test <test@nowak-reisen.de>\r\nSubject: testing webhooks\r\nMime-Version: 1.0\r\nContent-Type: text/plain; charset=us-ascii\r\nContent-Transfer-Encoding: 7bit\r\n\r\nTest\r\n"
+}
