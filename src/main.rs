@@ -1,5 +1,8 @@
-use actix_web::{get, post, web, App, Error, HttpResponse, HttpServer, Responder};
+use actix_files::Files;
+use actix_web::{middleware, post, web, App, Error, HttpResponse, HttpServer};
 use clap::{crate_authors, crate_description, crate_name, crate_version, Parser};
+use log;
+use simple_logger::SimpleLogger;
 use std::{fs::OpenOptions, io::Write};
 use uuid::Uuid;
 
@@ -27,23 +30,32 @@ struct AppState {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let options: Options = Options::parse();
+    SimpleLogger::new()
+        .with_level(log::LevelFilter::Info)
+        .init()
+        .unwrap();
 
-    HttpServer::new(move || App::new().data(AppState {
+    log::info!("This is {} v.{}", crate_name!(), crate_version!());
+
+    HttpServer::new(move || {
+        App::new()
+            .data(AppState {
                 spool_dir: options.spool_dir.clone(),
-            }).service(index_get).service(index_post))
-        .bind(format!("127.0.0.1:{}", options.port))?
-        .run()
-        .await
-}
-
-#[get("/")]
-async fn index_get() -> impl Responder {
-    HttpResponse::Ok().body("Hello\n")
+            })
+            .wrap(middleware::Logger::default())
+            .service(index_post)
+            .service(Files::new("/mails", options.spool_dir.as_str()).show_files_listing())
+    })
+    .bind(format!("127.0.0.1:{}", options.port))?
+    .run()
+    .await
 }
 
 #[post("/")]
 async fn index_post(data: web::Data<AppState>, body: web::Bytes) -> Result<HttpResponse, Error> {
-    let file_name = format!("{}/{}.json", &data.spool_dir, Uuid::new_v4() );
+    log::info!("New mail received ({} bytes)", body.len());
+
+    let file_name = format!("{}/{}.json", &data.spool_dir, Uuid::new_v4());
     let mut file = OpenOptions::new()
         .write(true)
         .create_new(true)
