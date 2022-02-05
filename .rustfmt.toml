@@ -1,0 +1,2 @@
+# https://github.com/rust-lang/rustfmt#rusts-editions
+edition = "2018"
