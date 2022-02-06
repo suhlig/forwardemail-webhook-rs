@@ -42,6 +42,7 @@ async fn main() -> std::io::Result<()> {
             .data(AppState {
                 spool_dir: options.spool_dir.clone(),
             })
+            .data(web::PayloadConfig::new(1024 * 1024 * 50))
             .wrap(middleware::Logger::default())
             .service(index_post)
             .service(Files::new("/mails", options.spool_dir.as_str()).show_files_listing())
