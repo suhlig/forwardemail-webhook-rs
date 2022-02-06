@@ -2,19 +2,21 @@
 
 This is a webhook that accepts e-mails as HTTP POST body as implemented by [forwardemail.net](https://forwardemail.net/en/faq#do-you-support-webhooks).
 
-# Build
+# Deploy
 
-## Once
+## TODO
+
+* make sure the spool directory exists (readable by service user)
+* register with Caddy (requires restart)
+* systemd unit file
+
+# Release
+
+There is a Concourse pipeline in `ci`. It creates a draft GitHub release for every tag:
 
 ```command
-$ rustup target add x86_64-unknown-linux-gnu
-$ rustup toolchain install stable-x86_64-unknown-linux-gnu
-```
-
-## Release
-
-```command
-$ cargo build --release --target x86_64-unknown-linux-gnu
+$ git tag -a v1.0.0-pre1 -m "Preparing release v1.0.0"
+$ git push --follow-tags
 ```
 
 # Development

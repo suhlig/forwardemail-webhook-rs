@@ -1,1 +1,2 @@
-/target
+target
+ci/private-config.yml

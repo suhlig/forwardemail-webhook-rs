@@ -1,0 +1,91 @@
+---
+jobs:
+  - name: test-main
+    plan:
+    - get: tasks
+    - get: source
+      trigger: true
+    - task: rustfmt
+      file: tasks/rust/rustfmt.yml
+    - task: clippy
+      file: tasks/rust/clippy.yml
+    - task: run-tests
+      file: tasks/rust/test.yml
+
+  - name: test-tag
+    plan:
+    - get: tasks
+    - get: tagged-commits
+      trigger: true
+    - task: rustfmt
+      file: tasks/rust/rustfmt.yml
+      input_mapping: { source: tagged-commits }
+    - task: clippy
+      file: tasks/rust/clippy.yml
+      input_mapping: { source: tagged-commits }
+    - task: run-tests
+      file: tasks/rust/test.yml
+      input_mapping: { source: tagged-commits }
+
+  - name: build-and-release-tag
+    plan:
+    - get: tasks
+    - get: tagged-commits
+      trigger: true
+      passed: [ test-tag ]
+    - task: build-release-binary
+      file: tasks/rust/build-release.yml
+      input_mapping: { source: tagged-commits }
+      params: { target: x86_64-unknown-linux-gnu }
+      output_mapping: { binaries: x86_64-unknown-linux-gnu }
+    - task: compress-release-binary
+      file: tasks/rust/compress.yml
+      params:
+        target: x86_64-unknown-linux-gnu
+        prefix: forwardemail-webhook-rs
+      input_mapping: { binaries: x86_64-unknown-linux-gnu }
+      output_mapping: { compressed: assets }
+    - task: compile-release-notes
+      file: tasks/git/release-notes.yml
+      input_mapping: { repo: tagged-commits }
+      output_mapping: { release-notes: release-notes }
+    - put: gh-release
+      params:
+        name: tagged-commits/.git/ref
+        tag: tagged-commits/.git/ref
+        body: release-notes/commits-since-last-tag.txt
+        globs:
+          - assets/*
+
+resources:
+  - name: tasks
+    type: git
+    icon: github
+    source:
+      uri: git@github.com:suhlig/concourse-task-store.git
+      private_key: ((github.ssh_key))
+
+  - name: source
+    type: git
+    icon: github
+    source: &source
+       uri: git@github.com:suhlig/forwardemail-webhook-rs.git
+       private_key: ((github.ssh_key))
+
+  - name: tagged-commits
+    type: git
+    icon: tag
+    source:
+      <<: *source
+      fetch_tags: true
+      tag_filter: v*
+
+  - name: gh-release
+    type: github-release
+    icon: github
+    source:
+      owner: suhlig
+      repository: forwardemail-webhook-rs
+      access_token: ((github.token))
+      pre_release: true
+      drafts: true

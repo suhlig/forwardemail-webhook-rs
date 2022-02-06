@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -euo pipefail
+IFS=$'\n\t'
+
+CONCOURSE_TARGET=uh
+PIPELINE_NAME=forwardemail-webhook-rs
+SCRIPT_PATH=$(dirname "$(realpath -s "$0")")
+
+fly \
+    --target "$CONCOURSE_TARGET" \
+  set-pipeline \
+    --pipeline="$PIPELINE_NAME" \
+    --config "$SCRIPT_PATH"/release.yml \
+    --load-vars-from="${SCRIPT_PATH}/private-config.yml"
