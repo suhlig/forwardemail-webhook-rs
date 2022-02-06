@@ -2,7 +2,7 @@
 name = "forwardemail-webhook-rs"
 description = "Webhook server for emails reveived via forwardemail.net"
 authors = [ "Steffen Uhlig <steffen@familie-uhlig.net>" ]
-version = "1.0.0"
+version = "1.0.2"
 edition = "2021"
 
 [dependencies]
