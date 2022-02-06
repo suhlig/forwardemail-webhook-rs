@@ -1,7 +1,6 @@
 use actix_files::Files;
 use actix_web::{middleware, post, web, App, Error, HttpResponse, HttpServer};
 use clap::{crate_authors, crate_description, crate_name, crate_version, Parser};
-use log;
 use simple_logger::SimpleLogger;
 use std::{fs::OpenOptions, io::Write};
 use uuid::Uuid;
