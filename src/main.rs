@@ -1,5 +1,5 @@
 use actix_files::Files;
-use actix_web::{middleware, post, web, App, Error, HttpResponse, HttpServer};
+use actix_web::{middleware, get, post, web, App, Error, HttpResponse, HttpServer};
 use clap::{crate_authors, crate_description, crate_name, crate_version, Parser};
 use simple_logger::SimpleLogger;
 use std::{fs::OpenOptions, io::Write};
@@ -34,7 +34,7 @@ async fn main() -> std::io::Result<()> {
         .init()
         .unwrap();
 
-    log::info!("This is {} v.{}", crate_name!(), app_version());
+    log::info!("This is {}", app_description());
 
     HttpServer::new(move || {
         App::new()
@@ -43,12 +43,22 @@ async fn main() -> std::io::Result<()> {
             })
             .data(web::PayloadConfig::new(1024 * 1024 * 50))
             .wrap(middleware::Logger::default())
+            .service(index_get)
             .service(index_post)
             .service(Files::new("/mails", options.spool_dir.as_str()).show_files_listing())
     })
     .bind(format!("127.0.0.1:{}", options.port))?
     .run()
     .await
+}
+
+#[get("/")]
+async fn index_get() -> Result<HttpResponse, Error> {
+    Ok(
+        HttpResponse::Ok()
+        .header("X-Server-Version", app_description())
+        .body( format!("{}\n", app_description()) )
+    )
 }
 
 #[post("/")]
@@ -74,4 +84,8 @@ fn app_version() -> &'static str {
 
 mod built_info {
     include!(concat!(env!("OUT_DIR"), "/built.rs")); // The file has been placed there by the build script.
+}
+
+fn app_description() -> String {
+    format!("{} {}", crate_name!(), app_version())
 }
