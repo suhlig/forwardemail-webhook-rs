@@ -1,5 +1,5 @@
 use actix_files::Files;
-use actix_web::{middleware, get, post, web, App, Error, HttpResponse, HttpServer};
+use actix_web::{get, middleware, post, web, App, Error, HttpResponse, HttpServer};
 use clap::{crate_authors, crate_description, crate_name, crate_version, Parser};
 use simple_logger::SimpleLogger;
 use std::{fs::OpenOptions, io::Write};
@@ -54,11 +54,9 @@ async fn main() -> std::io::Result<()> {
 
 #[get("/")]
 async fn index_get() -> Result<HttpResponse, Error> {
-    Ok(
-        HttpResponse::Ok()
+    Ok(HttpResponse::Ok()
         .header("X-Server-Version", app_description())
-        .body( format!("{}\n", app_description()) )
-    )
+        .body(format!("{}\n", app_description())))
 }
 
 #[post("/")]
