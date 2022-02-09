@@ -8,7 +8,7 @@ use uuid::Uuid;
 #[derive(Parser)]
 #[clap(
     name(crate_name!()),
-    version( crate_version!() ),
+    version( app_version() ),
     author( crate_authors!() ),
     about( crate_description!() ),
 )]
@@ -34,7 +34,7 @@ async fn main() -> std::io::Result<()> {
         .init()
         .unwrap();
 
-    log::info!("This is {} v.{}", crate_name!(), crate_version!());
+    log::info!("This is {} v.{}", crate_name!(), app_version());
 
     HttpServer::new(move || {
         App::new()
@@ -62,4 +62,16 @@ async fn index_post(data: web::Data<AppState>, body: web::Bytes) -> Result<HttpR
         .open(&file_name)?;
     file.write_all(&body)?;
     Ok(HttpResponse::Ok().body(format!("stored as {}\n", &file_name)))
+}
+
+/// Provides the app version at build time - either the current git version, or, if not available, the static version string of the crate.
+fn app_version() -> &'static str {
+    match built_info::GIT_VERSION {
+        Some(g) => g,
+        None => crate_version!(),
+    }
+}
+
+mod built_info {
+    include!(concat!(env!("OUT_DIR"), "/built.rs")); // The file has been placed there by the build script.
 }
