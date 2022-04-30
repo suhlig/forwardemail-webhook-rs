@@ -2,51 +2,51 @@
 jobs:
   - name: test-main
     plan:
-    - get: tasks
+    - get: lib
     - get: source
       trigger: true
     - task: rustfmt
-      file: tasks/rust/rustfmt.yml
+      file: lib/tasks/rust/rustfmt.yml
     - task: clippy
-      file: tasks/rust/clippy.yml
+      file: lib/tasks/rust/clippy.yml
     - task: run-tests
-      file: tasks/rust/test.yml
+      file: lib/tasks/rust/test.yml
 
   - name: test-tag
     plan:
-    - get: tasks
+    - get: lib
     - get: tagged-commits
       trigger: true
     - task: rustfmt
-      file: tasks/rust/rustfmt.yml
+      file: lib/tasks/rust/rustfmt.yml
       input_mapping: { source: tagged-commits }
     - task: clippy
-      file: tasks/rust/clippy.yml
+      file: lib/tasks/rust/clippy.yml
       input_mapping: { source: tagged-commits }
     - task: run-tests
-      file: tasks/rust/test.yml
+      file: lib/tasks/rust/test.yml
       input_mapping: { source: tagged-commits }
 
   - name: build-and-release-tag
     plan:
-      - get: tasks
+      - get: lib
       - get: tagged-commits
         trigger: true
         passed: [ test-tag ]
       - task: build-release-binary
-        file: tasks/rust/build-release.yml
+        file: lib/tasks/rust/build-release.yml
         input_mapping: { source: tagged-commits }
         params: { target: x86_64-unknown-linux-gnu }
         output_mapping: { binaries: x86_64-unknown-linux-gnu }
       - task: compress-release-binary
-        file: tasks/rust/compress.yml
+        file: lib/tasks/rust/compress.yml
         params:
           target: x86_64-unknown-linux-gnu
           prefix: forwardemail-webhook-rs
         input_mapping: { binaries: x86_64-unknown-linux-gnu }
         output_mapping: { compressed: assets }
       - task: compile-release-notes
-        file: tasks/git/release-notes.yml
+        file: lib/tasks/git/release-notes.yml
         input_mapping: { repo: tagged-commits }
         output_mapping: { release-notes: release-notes }
       - put: gh-release
@@ -59,7 +59,7 @@ jobs:
     on_success:
       do:
         - task: create-publication-message
-          file: tasks/git/create-release-message.yml
+          file: lib/tasks/git/create-release-message.yml
           input_mapping: { source: tagged-commits }
           params: { project_name: forwardemail-webhook-rs }
           output_mapping: { message: telegram-message }
@@ -69,11 +69,11 @@ jobs:
             text_file: telegram-message/new-release.txt
 
 resources:
-  - name: tasks
+  - name: lib
     type: git
     icon: github
     source:
-      uri: git@github.com:suhlig/concourse-task-store.git
+      uri: git@github.com:suhlig/concourse-task-library.git
       private_key: ((github.ssh_key))
 
   - name: source
