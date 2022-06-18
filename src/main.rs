@@ -38,10 +38,10 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
-            .data(AppState {
+            .app_data(AppState {
                 spool_dir: options.spool_dir.clone(),
             })
-            .data(web::PayloadConfig::new(1024 * 1024 * 50))
+            .app_data(web::PayloadConfig::new(1024 * 1024 * 50))
             .wrap(middleware::Logger::default())
             .service(index_get)
             .service(index_post)
@@ -55,7 +55,7 @@ async fn main() -> std::io::Result<()> {
 #[get("/")]
 async fn index_get() -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok()
-        .header("X-Server-Version", app_description())
+        .append_header(("X-Server-Version", app_description()))
         .body(format!("{}\n", app_description())))
 }
 
