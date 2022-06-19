@@ -123,16 +123,13 @@ async fn mails_index(req: HttpRequest, data: web::Data<AppState>) -> Result<Http
 
     let mut links = vec![];
 
-    for path in paths {
-        match path {
-            Ok(p) => links.push(format!(
-                "<li><a href={}/{}>{}</a></li>",
-                req.path(),
-                p.path().strip_prefix(&data.spool_dir).unwrap().display(),
-                p.path().strip_prefix(&data.spool_dir).unwrap().display()
-            )),
-            Err(_) => (),
-        }
+    for p in paths.into_iter().flatten() {
+        links.push(format!(
+            "<li><a href={}/{}>{}</a></li>",
+            req.path(),
+            p.path().strip_prefix(&data.spool_dir).unwrap().display(),
+            p.path().strip_prefix(&data.spool_dir).unwrap().display()
+        ));
     }
 
     Ok(HttpResponse::Ok().body(format!("<h1>Mails</h1><ul>{}</ul>", links.join("\n"))))
@@ -155,7 +152,7 @@ async fn mails(req: HttpRequest, data: web::Data<AppState>) -> Result<HttpRespon
             .body(content)),
         Err(e) => {
             log::error!("failed to read spool file: {}", e);
-            return Ok(HttpResponse::InternalServerError().body("Sorry"));
+            Ok(HttpResponse::InternalServerError().body("Sorry"))
         }
     }
 }
