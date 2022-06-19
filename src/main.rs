@@ -1,8 +1,19 @@
-use actix_files::Files;
-use actix_web::{get, middleware, post, web, App, Error, HttpResponse, HttpServer};
+use actix_web::dev::ServiceRequest;
+use actix_web::http::header::ContentType;
+use actix_web::{
+    get, middleware, post,
+    web::{self, Data},
+    App, Error, HttpRequest, HttpResponse, HttpServer,
+};
+use actix_web_httpauth::extractors::basic::BasicAuth;
+use actix_web_httpauth::middleware::HttpAuthentication;
 use clap::{crate_authors, crate_description, crate_name, crate_version, Parser};
 use simple_logger::SimpleLogger;
-use std::{fs::OpenOptions, io::Write};
+use std::path::PathBuf;
+use std::{
+    fs::{self, OpenOptions},
+    io::Write,
+};
 use uuid::Uuid;
 
 #[derive(Parser)]
@@ -26,26 +37,51 @@ struct AppState {
     spool_dir: String,
 }
 
+async fn validator(req: ServiceRequest, _credentials: BasicAuth) -> Result<ServiceRequest, Error> {
+    let password = match _credentials.password() {
+        Some(pwd) => format!("with password '{}'", pwd),
+        None => String::from("without password"),
+    };
+
+    log::info!(
+        "User '{}' authenticating {}",
+        _credentials.user_id(),
+        password
+    );
+
+    Ok(req)
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let options: Options = Options::parse();
     SimpleLogger::new()
-        .with_level(log::LevelFilter::Info)
+        .with_level(log::LevelFilter::Debug)
         .init()
         .unwrap();
 
     log::info!("This is {}", app_description());
 
+    let app_state = Data::new(AppState {
+        spool_dir: options.spool_dir.clone(),
+    });
+
     HttpServer::new(move || {
+        let auth = HttpAuthentication::basic(validator);
+
         App::new()
-            .app_data(AppState {
-                spool_dir: options.spool_dir.clone(),
-            })
+            .app_data(Data::clone(&app_state))
             .app_data(web::PayloadConfig::new(1024 * 1024 * 50))
             .wrap(middleware::Logger::default())
             .service(index_get)
             .service(index_post)
-            .service(Files::new("/mails", options.spool_dir.as_str()).show_files_listing())
+            .service(
+                web::scope("/mails")
+                    .service(logout)
+                    .service(mails)
+                    .service(mails_index)
+                    .wrap(auth),
+            )
     })
     .bind(format!("127.0.0.1:{}", options.port))?
     .run()
@@ -69,7 +105,59 @@ async fn index_post(data: web::Data<AppState>, body: web::Bytes) -> Result<HttpR
         .create_new(true)
         .open(&file_name)?;
     file.write_all(&body)?;
-    Ok(HttpResponse::Ok().body(format!("stored as {}\n", &file_name)))
+
+    log::info!("stored as {}", &file_name);
+
+    Ok(HttpResponse::Ok().body("Thanks!\n"))
+}
+
+#[get("")]
+async fn mails_index(req: HttpRequest, data: web::Data<AppState>) -> Result<HttpResponse, Error> {
+    let paths = match fs::read_dir(&data.spool_dir) {
+        Ok(p) => p,
+        Err(e) => {
+            log::error!("failed to read spool dir: {}", e);
+            return Ok(HttpResponse::InternalServerError().body("Sorry"));
+        }
+    };
+
+    let mut links = vec![];
+
+    for path in paths {
+        match path {
+            Ok(p) => links.push(format!(
+                "<li><a href={}/{}>{}</a></li>",
+                req.path(),
+                p.path().strip_prefix(&data.spool_dir).unwrap().display(),
+                p.path().strip_prefix(&data.spool_dir).unwrap().display()
+            )),
+            Err(_) => (),
+        }
+    }
+
+    Ok(HttpResponse::Ok().body(format!("<h1>Mails</h1><ul>{}</ul>", links.join("\n"))))
+}
+
+#[get("logout")]
+async fn logout() -> Result<HttpResponse, Error> {
+    Ok(HttpResponse::Unauthorized().body("kthxbye"))
+}
+
+#[get("{filename:.*}")]
+async fn mails(req: HttpRequest, data: web::Data<AppState>) -> Result<HttpResponse, Error> {
+    let mut path = PathBuf::from(&data.spool_dir);
+    let file_name: std::path::PathBuf = req.match_info().query("filename").parse().unwrap();
+    path.push(file_name);
+
+    match fs::read_to_string(path) {
+        Ok(content) => Ok(HttpResponse::Ok()
+            .insert_header(ContentType::json())
+            .body(content)),
+        Err(e) => {
+            log::error!("failed to read spool file: {}", e);
+            return Ok(HttpResponse::InternalServerError().body("Sorry"));
+        }
+    }
 }
 
 /// Provides the app version at build time - either the current git version, or, if not available, the static version string of the crate.
